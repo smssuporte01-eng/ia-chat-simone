@@ -16,7 +16,6 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // Tenta ler o body como objeto; se vier string, faz parse.
     let body = req.body;
     if (typeof body === "string") {
       try { body = JSON.parse(body); } catch { body = {}; }
@@ -32,7 +31,6 @@ Ajude com orientações práticas, acolhedoras e baseadas em evidências.
 Seja clara, objetiva e use linguagem acessível.
     `.trim();
 
-    // Chamada direta à API da OpenAI (sem SDK)
     const oaRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -53,10 +51,7 @@ Seja clara, objetiva e use linguagem acessível.
 
     if (!oaRes.ok) {
       console.error("OpenAI error", oaRes.status, data);
-      return res.status(500).json({
-        error: "Falha na OpenAI",
-        detail: data
-      });
+      return res.status(500).json({ error: "Falha na OpenAI", detail: data });
     }
 
     const reply = data?.choices?.[0]?.message?.content || "Desculpe, não consegui responder agora.";
@@ -66,5 +61,3 @@ Seja clara, objetiva e use linguagem acessível.
     return res.status(500).json({ error: "Falha ao gerar resposta" });
   }
 };
-
-
