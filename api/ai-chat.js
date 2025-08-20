@@ -1,25 +1,17 @@
 // api/ai-chat.js
-// Serverless Function para Vercel (Node) usando fetch nativo.
+// Função Serverless para Vercel (Node.js)
 
 module.exports = async function handler(req, res) {
-  // ===== CORS =====
-  // Durante testes, deixe "*". Depois TROQUE para seu domínio da The Members,
-  // por ex: const ALLOWED_ORIGINS = ["https://SEU-SUBDOMINIO.themembers.com"];
-  const ALLOWED_ORIGINS = ["*"];
-
-  const origin = req.headers.origin || "";
-  const allowOrigin = ALLOWED_ORIGINS.includes("*")
-    ? "*"
-    : (ALLOWED_ORIGINS.includes(origin) ? origin : "");
-
-  res.setHeader("Access-Control-Allow-Origin", allowOrigin);
-  res.setHeader("Vary", "Origin");
+  // ===== CONFIGURAÇÃO DE CORS =====
+  // Durante os testes, use "*" (permite de qualquer origem).
+  // Depois troque para o domínio real da sua The Members.
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Vary", "Origin");
 
   if (req.method === "OPTIONS") {
-    // Preflight precisa sair com cabeçalhos já setados
-    return res.status(204).end();
+    return res.status(204).end(); // resposta ao preflight
   }
 
   if (req.method !== "POST") {
@@ -27,7 +19,6 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // Body pode vir string; normalizamos:
     let body = req.body;
     if (typeof body === "string") {
       try { body = JSON.parse(body); } catch { body = {}; }
@@ -43,7 +34,6 @@ Ajude com orientações práticas, acolhedoras e baseadas em evidências.
 Seja clara, objetiva e use linguagem acessível.
     `.trim();
 
-    // Chamada direta à OpenAI (sem SDK)
     const oaRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
