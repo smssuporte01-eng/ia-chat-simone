@@ -1,53 +1,69 @@
-import OpenAI from "openai";
+// api/ai-chat.js
+// Serverless Function para Vercel usando CommonJS + fetch nativo (sem dependências).
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-// Vercel (Node/Serverless) — rota POST /api/ai-chat
-export default async function handler(req, res) {
-  // Permite apenas POST
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método não permitido" });
-  }
-
-  // CORS simples (libera seu domínio da The Members)
-  const ORIGINS = [
-    // Coloque aqui o domínio onde seu curso roda:
-    // exemplo: "https://SEU-SUBDOMINIO.themembers.com"
-    // enquanto não sabe, temporariamente deixe "*"
-    "*"
-  ];
-  const origin = req.headers.origin || "";
+module.exports = async function handler(req, res) {
+  // CORS básico (libere * para testar; depois troque pelo domínio da The Members)
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  res.setHeader("Access-Control-Allow-Origin", ORIGINS.includes("*") ? "*" : (ORIGINS.includes(origin) ? origin : ""));
-  if (req.method === "OPTIONS") return res.status(204).end();
+
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
 
   try {
-    const { messages } = req.body || {};
+    // Tenta ler o body como objeto; se vier string, faz parse.
+    let body = req.body;
+    if (typeof body === "string") {
+      try { body = JSON.parse(body); } catch { body = {}; }
+    }
+    const { messages } = body || {};
     if (!Array.isArray(messages)) {
       return res.status(400).json({ error: "Body inválido: 'messages' deve ser um array" });
     }
 
-    // Instruções do seu “agente clonado”
     const systemPrompt = `
 Você é a IA da Simone, especialista em neuropsicopedagogia.
 Ajude com orientações práticas, acolhedoras e baseadas em evidências.
 Seja clara, objetiva e use linguagem acessível.
-    `;
+    `.trim();
 
-    const completion = await client.chat.completions.create({
-      model: "gpt-4o-mini", // custo baixo e bom para chat
-      temperature: 0.3,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages
-      ]
+    // Chamada direta à API da OpenAI (sem SDK)
+    const oaRes = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        temperature: 0.3,
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...messages
+        ]
+      })
     });
 
-    const reply = completion?.choices?.[0]?.message?.content || "Desculpe, não consegui responder agora.";
+    const data = await oaRes.json();
+
+    if (!oaRes.ok) {
+      console.error("OpenAI error", oaRes.status, data);
+      return res.status(500).json({
+        error: "Falha na OpenAI",
+        detail: data
+      });
+    }
+
+    const reply = data?.choices?.[0]?.message?.content || "Desculpe, não consegui responder agora.";
     return res.status(200).json({ reply });
   } catch (err) {
-    console.error("OPENAI ERROR", err);
-    return res.status(500).json({ error: "Erro ao gerar resposta" });
+    console.error("SERVER ERROR", err);
+    return res.status(500).json({ error: "Falha ao gerar resposta" });
   }
-}
+};
+
