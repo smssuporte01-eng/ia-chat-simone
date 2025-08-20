@@ -1,9 +1,18 @@
 // api/ai-chat.js
-// Serverless Function para Vercel usando CommonJS + fetch nativo (sem dependências).
-
 module.exports = async function handler(req, res) {
-  // CORS básico (libere * para testar; depois troque pelo domínio da The Members)
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  // ----- CORS -----
+  // TESTE RÁPIDO: deixe "*" (funciona de qualquer origem).
+  // Depois troque para o domínio da The Members, por ex:
+  // const ALLOWED_ORIGINS = ["https://SEU-SUBDOMINIO.themembers.com"];
+  const ALLOWED_ORIGINS = ["*"];
+
+  const origin = req.headers.origin || "";
+  const allowOrigin = ALLOWED_ORIGINS.includes("*")
+    ? "*"
+    : (ALLOWED_ORIGINS.includes(origin) ? origin : "");
+
+  res.setHeader("Access-Control-Allow-Origin", allowOrigin);
+  res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
@@ -15,6 +24,7 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
+  // ====== DAQUI PRA BAIXO MANTÉM O RESTO IGUAL ======
   try {
     let body = req.body;
     if (typeof body === "string") {
