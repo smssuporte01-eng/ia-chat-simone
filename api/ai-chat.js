@@ -1,9 +1,10 @@
 // api/ai-chat.js
+// Serverless Function para Vercel (Node) usando fetch nativo.
+
 module.exports = async function handler(req, res) {
-  // ----- CORS -----
-  // TESTE RÁPIDO: deixe "*" (funciona de qualquer origem).
-  // Depois troque para o domínio da The Members, por ex:
-  // const ALLOWED_ORIGINS = ["https://SEU-SUBDOMINIO.themembers.com"];
+  // ===== CORS =====
+  // Durante testes, deixe "*". Depois TROQUE para seu domínio da The Members,
+  // por ex: const ALLOWED_ORIGINS = ["https://SEU-SUBDOMINIO.themembers.com"];
   const ALLOWED_ORIGINS = ["*"];
 
   const origin = req.headers.origin || "";
@@ -17,6 +18,7 @@ module.exports = async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") {
+    // Preflight precisa sair com cabeçalhos já setados
     return res.status(204).end();
   }
 
@@ -24,8 +26,8 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  // ====== DAQUI PRA BAIXO MANTÉM O RESTO IGUAL ======
   try {
+    // Body pode vir string; normalizamos:
     let body = req.body;
     if (typeof body === "string") {
       try { body = JSON.parse(body); } catch { body = {}; }
@@ -41,6 +43,7 @@ Ajude com orientações práticas, acolhedoras e baseadas em evidências.
 Seja clara, objetiva e use linguagem acessível.
     `.trim();
 
+    // Chamada direta à OpenAI (sem SDK)
     const oaRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
